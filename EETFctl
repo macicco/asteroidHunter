@@ -1,0 +1,5 @@
+#!/bin/bash
+pointer.py $1
+eDpreprocesor.py $1
+nice -n 5 ionice -c2 -n5 eDslowmovers.py $1
+eDfastmovers.py $1

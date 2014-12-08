@@ -1,0 +1,5 @@
+#!/bin/bash
+PATH=$PATH:/usr/local/bin:$HOME/bin
+fetchmail
+EETFctl start
+mail -s "TYCHO BOOT" mas.ignacio@gmail.com
