@@ -223,7 +223,8 @@ class imagerClass(helper):
 			line="%u %.0f %.0f\n" % (i,Xb,Yb)
 			fi.write(line)
 		fi.close()
-
+	'''
+	#moved funcionality to eUcropper.py
 	def crop(self,fits,fichero,(x0,x1,y0,y1)):
 		print "Generating crop from:",fits, "coords:",x0,x1,y0,y1
 		myimage = f2n.fromfits(fits)
@@ -235,7 +236,7 @@ class imagerClass(helper):
 		myimage.makepilimage("log", negative = False)
 		# We can choose to make a negative image.
 		myimage.tonet(fichero)
-		
+	'''	
 
 	def do(self):
 		self.fitsPNGs()

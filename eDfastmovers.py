@@ -26,15 +26,12 @@ import eUsex
 import eUloners
 import eFcandidates
 import eFmovers
-import eFcroppies
+import eFcropper
 
-import eUmermaid
+
 import eUhelper
 
 import eUimager
-
-#from pyraf import iraf
-
 
 from eUconfig import *
 
@@ -49,7 +46,7 @@ class fastMoverDaemonClass(eUdaemon.FileChecker):
 		log=self.getStats()
 		log['FASTMOVER_DAEMON_(RE)STARTED']=str(datetime.datetime.now())
 		self.recordStats(log)
-		#self.mermaid=eUmermaid.mermaidClass()
+
 		self.sat_server=self.cfg['sat_server']
 
         def knowSats(self,h):
@@ -135,7 +132,7 @@ class fastMoverDaemonClass(eUdaemon.FileChecker):
 			
 		if Nmovers!=0:
 			imager.paintDetections("fastmover")		
-			Fcropper=eFcroppies.cropClass(fits)
+			Fcropper=eFcropper.cropClass(fits)
 			Fcropper.do()
 
 

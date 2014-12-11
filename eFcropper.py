@@ -27,11 +27,7 @@ import csv
 import re
 import numpy as np
 import eUcatalog
-
-from pyraf import iraf
-from pyraf.gki import printPlot
-
-from images2gif import writeGif
+import eUcropper
 from PIL import Image,ImageDraw
 import glob
 
@@ -68,24 +64,28 @@ class cropClass(eUcatalog.moverCat,helper):
 		self.ImagesDir=self.htmldir+"/images"
 		self.CroppiesDir=self.htmldir+"/croppies"
 		self.CorrelationDir=self.htmldir+"/correlation"	
-		self.images()
+		#self.images()
 		self.animation()
 		self.correlations()
 		#self.frame_animation()
 		self.croppies()
 		self.html()
-		self.clean()
+		#self.clean()
 
 	def clean(self):
 		print "removing",self.FitsDir
 		shutil.rmtree(self.FitsDir)
 
+	def cropper(self,SrcFrame,x0,y0,x1,y1,DstFrame):
+		crp=eUcropper.cropperClass()
+		crp.loadImageFromFits(SrcFrame)
+		return crp.cropXY(x0,x1,y0,y1,DstFrame,negative=False)
+
 	def animation(self):
 		AnimationDir=self.AnimationDir
-		FitsDir=self.FitsDir
-		if not os.path.exists(FitsDir):
-			    os.makedirs(FitsDir)
-		res=commands.getoutput("rm "+FitsDir+"/anima*" )
+		if not os.path.exists(AnimationDir):
+	 		os.makedirs(AnimationDir)
+		res=commands.getoutput("rm "+AnimationDir+"/anima*" )
 		margen=0
 		movers=self.data
 		moversIDs=set(movers['ID'])
@@ -132,35 +132,22 @@ class cropClass(eUcatalog.moverCat,helper):
 				xmean=(x0+x1)/2
 				print "ANI:",x,y,x0,y0,x1,y1,deltaX,deltaY
 				tam=max(deltaX,deltaY)
-				DstFrame=FitsDir+"/animation%s-%02u.fit" % (moverID,int(id))
-				if os.path.isfile(DstFrame):
-					os.remove(DstFrame)
+				AnimationGif=AnimationDir+"/animation%s-%02u.png" % (moverID,int(id))
+				if os.path.isfile(AnimationGif):
+					os.remove(AnimationGif)
 
-				if not os.path.exists(AnimationDir):
-			 		os.makedirs(AnimationDir)
-
-				if not self.cropper(SrcFrame,(xmean-deltaX,ymean-deltaY),(xmean+deltaX,ymean+deltaY),DstFrame):
+				if not self.cropper(SrcFrame,xmean-deltaX,ymean-deltaY,xmean+deltaX,ymean+deltaY,AnimationGif):
 					continue
-				
-
-				AnimationGif="animation%s-%02u.gif" % (moverID,int(id))
-				AnimationFrame=FitsDir+"/animation%s-%02u.fit" % (moverID,int(id))
-				res=commands.getoutput("rm "+AnimationDir+"/"+AnimationGif)
-				res=commands.getoutput("rm "+AnimationDir+"/"+AnimationGif+'.png')
 			
-				iraf.export.images=AnimationFrame
-				iraf.export.format="gif"
-				iraf.export.binfiles=AnimationDir+"/"+AnimationGif
-				iraf.export.outbands="zscale(i1)"
-				iraf.export(_save=0,mode='h')	
-				im = Image.open(AnimationDir+"/"+AnimationGif).convert('RGB')
+	
+				im = Image.open(AnimationGif).convert('RGB')
 				draw = ImageDraw.Draw(im)
 				draw.line(((x-5,y),(x+5,y)),width=1,fill='#ff0000')
 				draw.line(((x,y-5),(x,y+5)),width=1,fill='#ff0000')
 				del draw 
-				im.save(AnimationDir+"/K"+AnimationGif+".png","PNG")
-				
-				img=Image.open(AnimationDir+"/"+AnimationGif)
+				im.save(AnimationGif,"PNG")
+		
+				img=Image.open(AnimationGif)
 				factor=1.
 				maxAnimationSize=float(cfg["max_animation_size"])
 				if deltaX>maxAnimationSize: 
@@ -170,16 +157,17 @@ class cropClass(eUcatalog.moverCat,helper):
 				print factor,deltaX,deltaY
 				img1=img.resize((int(deltaX*factor),int(deltaY*factor)),Image.ANTIALIAS)
 				#img1.show()
-				img1.save(AnimationDir+"/"+AnimationGif)
+				img1.save(AnimationGif)
 
 
 			file_names = sorted((fn for fn in os.listdir(AnimationDir) if fn.startswith('animation%s-' %moverID)))
-			imgs = [Image.open(AnimationDir+"/"+fn) for fn in file_names]
+			imgs = [AnimationDir+"/"+fn for fn in file_names]
 			if len(file_names)>0:
 				print file_names
 				#AnimateGif=AnimationDir+"/animate-%02u.gif" % moverID
 				AnimateGif=AnimationDir+"/animate-%s.gif" % moverID
-				writeGif(AnimateGif, imgs, duration=0.4)
+				crp=eUcropper.cropperClass()
+				crp.writeGif(AnimateGif, imgs, duration=0.4)
 
 				
 	def frame_animation(self):
@@ -267,53 +255,11 @@ class cropClass(eUcatalog.moverCat,helper):
 
    			
 
-	def cropper(self,fits,(x0,y0),(x1,y1),fitsout):
-		deltaX=x1-x0
-		deltaY=y1-y0
-		print "CROPPER ARG:",x0,y0,x1,y1,deltaX,deltaY
-		#iraf.imexpr(mode='al')
-		iraf.imexpr.expr="I*0.0+J*0.0"
-		iraf.imexpr.output=fitsout
-		iraf.imexpr.dims=str(deltaX)+","+str(deltaY) 
-		iraf.imexpr(_save=0,mode='h')
-
-		xx0=1
-		yy0=1
-		xx1=deltaX
-		yy1=deltaY
-	
-		if x0<=0:
-			xx0=-x0+1
-			x0=1
-		if y0<=0:
-			yy0=-y0+1
-			y0=1
-
-		if x1>self.frameWidth:
-			xx1=deltaX-(x1-self.frameWidth)
-			x1=self.frameWidth
-		if y1> self.frameHeight:
-			yy1=deltaY-(y1-self.frameHeight)
-			y1=self.frameHeight
-		print "CROPPER SRC:",x0,y0,x1,y1
-		print "CROPPER DST:",xx0,yy0,xx1,yy1
-		if x1<=0 or y1<=0 or x0>= self.frameWidth or y0>=self.frameHeight or abs(xx1-xx0)<4 or abs(yy1-yy0)<4 :
-			print "Out of limits"
-			return False
-		else:
-			iraf.imcopy.input=fits+"["+str(x0)+":"+str(x1)+","+str(y0)+":"+str(y1)+"]"
-			iraf.imcopy.output=fitsout+"["+str(xx0)+":"+str(xx1)+","+str(yy0)+":"+str(yy1)+"]"
-			iraf.imcopy(_save=0,mode='h')
-			return True
-
 	def croppies(self):
 		CroppiesDir=self.CroppiesDir
 		if not os.path.exists(CroppiesDir):
 		    os.makedirs(CroppiesDir)
-		FitsDir=self.FitsDir
-		if not os.path.exists(FitsDir):
-		    os.makedirs(FitsDir)
-		res=commands.getoutput("rm "+FitsDir+"/cropp*" )
+		res=commands.getoutput("rm "+CroppiesDir+"/cropp*" )
 		tam=0
 		movers=self.data
 		moversIDs=set(movers['ID'])
@@ -348,12 +294,12 @@ class cropClass(eUcatalog.moverCat,helper):
 					print "Dest Frame:",DstFrame
 					(x1,y1)=map(lambda x:int(x),(self.wcs2pix(DstFrame,(ra_org,dec_org))))	
 					print x1,y1
-					CropFrame=FitsDir+"/croppy%s-%02u-%02u.fit" % (moverID,int(id),int(idd))
+					CropFrame=CroppiesDir+"/croppy%s-%02u-%02u.png" % (moverID,int(id),int(idd))
 					if os.path.isfile(CropFrame):
 						os.remove(CropFrame)
-					self.cropper(DstFrame,(x1-tam,y1-tam),(x1+tam,y1+tam),CropFrame)
+					self.cropper(DstFrame,x1-tam,y1-tam,x1+tam,y1+tam,CropFrame)
 
-			res=commands.getoutput("rm "+CroppiesDir+"/croppies"+str(moverID)+".gif" )
+			res=commands.getoutput("rm "+CroppiesDir+"/croppies"+str(moverID)+".png" )
 			if len(set(mover['frame']))==3:	
 			  try:
 				iraf.files(FitsDir+"/croppy"+str(moverID)+"-*-*.fit",Stdout=FitsDir+"/croppies"+str(moverID)+".lis") 
@@ -377,11 +323,6 @@ class cropClass(eUcatalog.moverCat,helper):
 			
 	def images(self):
 		ImagesDir=self.ImagesDir
-		print ImagesDir
-		FitsDir=self.FitsDir
-		if not os.path.exists(FitsDir):
-		    os.makedirs(FitsDir)
-		res=commands.getoutput("rm "+FitsDir+"/image*" )
 		if not os.path.exists(ImagesDir):
 		    os.makedirs(ImagesDir)
 		res=commands.getoutput("cp "+configpath+"/nodata.png "+self.ImagesDir+"/.")
@@ -440,22 +381,12 @@ class cropClass(eUcatalog.moverCat,helper):
 				print "X/YSPEED:",xspeed,yspeed,speed
 				print (x0line,y0line),(x1line,y1line)
 
-				DstFrame=FitsDir+"/image%s-%02u.fit" % (moverID,int(id))
+				DstFrame=ImagesDir+"/image%s-%02u.png" % (moverID,int(id))
 				if os.path.isfile(DstFrame):
 					os.remove(DstFrame)
 
-				self.cropper(SrcFrame,(x-tam,y-tam),(x+tam,y+tam),DstFrame)
+				self.cropper(SrcFrame,x-tam,y-tam,x+tam,y+tam,DstFrame)
 				framelist.append(DstFrame)
-				iraf.export.images=DstFrame
-				iraf.export.format="gif"
-				DstGif=ImagesDir+"/image%s-%02u.gif" % (moverID,int(id))
-				print DstFrame
-				print DstGif
-				if os.path.isfile(DstGif):
-					os.remove(DstGif)
-				iraf.export.binfiles=DstGif
-				iraf.export.outbands="zscale(i1)"
-				iraf.export(_save=0,mode='h')
 				xx=tam
 				yy=tam
 

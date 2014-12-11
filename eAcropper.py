@@ -8,7 +8,6 @@ import simplejson
 import eUcatalog
 import eUcropper
 from PIL import Image,ImageDraw,ImageFont
-from images2gif import writeGif
 import math
 from eUconfig import *
 
@@ -63,6 +62,7 @@ class cropClass(eUcatalog.moverCat,eUcropper.cropperClass,helper):
 
 
 			DstFrame=AnimationDir+"/animation%s-%02u.png" % (moverID,int(id))
+			#DstFrame=AnimationDir+"/animation%s-%02u.gif" % (moverID,int(id))
 			if os.path.isfile(DstFrame):
 				os.remove(DstFrame)
 
@@ -86,14 +86,11 @@ class cropClass(eUcatalog.moverCat,eUcropper.cropperClass,helper):
 				im.save(DstFrame,"PNG")
 				
 
-
 		file_names = sorted((fn for fn in os.listdir(AnimationDir) if fn.startswith('animation%s-' %moverID)))
 		if len(file_names)>0:
-			imgs = [Image.open(AnimationDir+"/"+fn) for fn in file_names]
-			print file_names
-			#AnimateGif=AnimationDir+"/animate-%02u.gif" % moverID
+			imgs = [AnimationDir+"/"+fn for fn in file_names]
 			AnimateGif=AnimationDir+"/animate-%s.gif" % moverID
-			writeGif(AnimateGif, imgs, duration=0.4)	
+			self.writeGif(AnimateGif, imgs, duration=0.4)	
 
 	def writeJson(self):
 		AnimationDir=cfg["base_html_dir"]+"/"+self.getToday()+"/slow_animations"

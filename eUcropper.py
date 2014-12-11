@@ -39,6 +39,7 @@ class cropperClass:
 		myimage = copy.deepcopy(self.fitsToCrop)
 		myimage.crop(x0,x1,y0,y1)
 		myimage.setzscale(z1="auto",z2="flat",samplesizelimit=10000,nsig=3)
+		#myimage.setzscale(z1="auto",z2="auto",samplesizelimit=10000,nsig=3)
 		#myimage.setzscale(-1000,5000)
 		# z2 = "ex" means extrema -> maximum in this case.
 		if negative:
@@ -53,6 +54,22 @@ class cropperClass:
 		return False
 
 	   return True	
+
+	def writeGif(self,AnimateGif, imgs, duration=0.4):
+		use_convert=True
+		if use_convert:
+			#animategif library do not work properly
+			#use ImageMagick instead
+			cmd="convert -delay "+str(duration*100)+" -loop 0 "
+			for im in imgs:
+				cmd=cmd+im+" "
+			cmd=cmd+AnimateGif
+			res=commands.getoutput(cmd)
+			print res
+		else:
+			from images2gif import writeGif
+			imgsI = [Image.open(fn) for fn in imgs]
+			writeGif(AnimateGif, imgsI, duration)
 
 	def test(self):
 		print "Generating PNG from:",fits

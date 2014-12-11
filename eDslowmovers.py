@@ -33,12 +33,10 @@ import eUhelper
 
 import eUimager
 
-#from pyraf import iraf
-
 
 from eUconfig import *
 
-###DO NOT USE. NOT FINISH.
+
 
 class SlowMoverDaemonClass(eUdaemon.FileChecker):
 
@@ -95,7 +93,7 @@ class SlowMoverDaemonClass(eUdaemon.FileChecker):
 			shutil.copy(dir+f,dir_dest+"/"+f)
 
 		os.chdir(dir_dest)
-		#iraf.chdir(dir_dest)
+
 
 		imager=eUimager.imagerClass(fits)
 		####### SLOWMOVERS ######

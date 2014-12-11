@@ -8,3 +8,10 @@ This software use pyephem and astrometry.net thus you have to have installed in 
 
 WARNING!: Due to early develoment state and the lack of documentation at this time is not usefull for any different of the author. Don't ask!
 
+__Prerequisites__
+-----------------
+
+* astronomy.net + his catalogs
+* imagenmagick 'convert' utility
+* 'stilts' 
+* pyephem
