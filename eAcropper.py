@@ -90,7 +90,7 @@ class cropClass(eUcatalog.moverCat,eUcropper.cropperClass,helper):
 		if len(file_names)>0:
 			imgs = [AnimationDir+"/"+fn for fn in file_names]
 			AnimateGif=AnimationDir+"/animate-%s.gif" % moverID
-			self.writeGif(AnimateGif, imgs, duration=0.4)	
+			eUcropper.writeGif(AnimateGif, imgs, duration=0.4)	
 
 	def writeJson(self):
 		AnimationDir=cfg["base_html_dir"]+"/"+self.getToday()+"/slow_animations"

@@ -52,7 +52,10 @@ class calibrator:
 		####INVERT THE FRAME TO FOLLOW LA SAGRA STANDARD
 		if invert:
 	 	   for i,f in enumerate(fits):
-			pass
+			light=fitsMaths.fitMaths(f)
+			light.hdulist[0].data=light.hdulist[0].data[::-1,:]
+			light.save(f)
+
 
 if __name__ == '__main__':
 	fitsFiles=sys.argv[1:]

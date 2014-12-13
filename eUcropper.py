@@ -55,21 +55,6 @@ class cropperClass:
 
 	   return True	
 
-	def writeGif(self,AnimateGif, imgs, duration=0.4):
-		use_convert=True
-		if use_convert:
-			#animategif library do not work properly
-			#use ImageMagick instead
-			cmd="convert -delay "+str(duration*100)+" -loop 0 "
-			for im in imgs:
-				cmd=cmd+im+" "
-			cmd=cmd+AnimateGif
-			res=commands.getoutput(cmd)
-			print res
-		else:
-			from images2gif import writeGif
-			imgsI = [Image.open(fn) for fn in imgs]
-			writeGif(AnimateGif, imgsI, duration)
 
 	def test(self):
 		print "Generating PNG from:",fits
@@ -81,6 +66,21 @@ class cropperClass:
 		# We can choose to make a negative image.
 		myimage.tonet("test.png")
 
+def writeGif(AnimateGif, imgs, duration=0.4):
+	use_convert=True
+	if use_convert:
+		#animategif library do not work properly
+		#use ImageMagick instead
+		cmd="convert -delay "+str(duration*100)+" -loop 0 "
+		for im in imgs:
+			cmd=cmd+im+" "
+		cmd=cmd+AnimateGif
+		res=commands.getoutput(cmd)
+		print res
+	else:
+		from images2gif import writeGif
+		imgsI = [Image.open(fn) for fn in imgs]
+		writeGif(AnimateGif, imgsI, duration)
 
 if __name__ == '__main__':
 	fits=sys.argv[1:][0]

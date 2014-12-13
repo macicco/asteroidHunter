@@ -223,20 +223,6 @@ class imagerClass(helper):
 			line="%u %.0f %.0f\n" % (i,Xb,Yb)
 			fi.write(line)
 		fi.close()
-	'''
-	#moved funcionality to eUcropper.py
-	def crop(self,fits,fichero,(x0,x1,y0,y1)):
-		print "Generating crop from:",fits, "coords:",x0,x1,y0,y1
-		myimage = f2n.fromfits(fits)
-		#mylargeimage = copy.deepcopy(myimage)
-		myimage.crop(x0,x1,y0,y1)
-		#myimage.setzscale("auto")
-		myimage.setzscale(800,35000)
-		# z2 = "ex" means extrema -> maximum in this case.
-		myimage.makepilimage("log", negative = False)
-		# We can choose to make a negative image.
-		myimage.tonet(fichero)
-	'''	
 
 	def do(self):
 		self.fitsPNGs()

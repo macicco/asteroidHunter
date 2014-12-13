@@ -28,7 +28,7 @@ import re
 import numpy as np
 import eUcatalog
 import eUcropper
-from PIL import Image,ImageDraw
+from PIL import Image,ImageDraw,ImageMath
 import glob
 
 
@@ -60,26 +60,23 @@ class cropClass(eUcatalog.moverCat,helper):
 		if not os.path.exists(self.htmldir):
 			    os.makedirs(self.htmldir)
 		self.AnimationDir=self.htmldir+"/animations"
-		self.FitsDir="./FitsDir"
 		self.ImagesDir=self.htmldir+"/images"
 		self.CroppiesDir=self.htmldir+"/croppies"
 		self.CorrelationDir=self.htmldir+"/correlation"	
-		#self.images()
+		self.images()
 		self.animation()
 		self.correlations()
-		#self.frame_animation()
 		self.croppies()
 		self.html()
-		#self.clean()
+		self.clean()
 
 	def clean(self):
-		print "removing",self.FitsDir
-		shutil.rmtree(self.FitsDir)
+		pass
 
-	def cropper(self,SrcFrame,x0,y0,x1,y1,DstFrame):
+	def cropper(self,SrcFrame,x0,y0,x1,y1,DstFrame,negative=False):
 		crp=eUcropper.cropperClass()
 		crp.loadImageFromFits(SrcFrame)
-		return crp.cropXY(x0,x1,y0,y1,DstFrame,negative=False)
+		return crp.cropXY(x0,x1,y0,y1,DstFrame,negative)
 
 	def animation(self):
 		AnimationDir=self.AnimationDir
@@ -121,7 +118,8 @@ class cropClass(eUcatalog.moverCat,helper):
 				y1=y1-margen
 				(x,y)=map(lambda x:int(x),(self.wcs2pix(SrcFrame,(RA,DEC))))				
 				x=x-x0
-				y=y-y1
+				y=y0-y
+				
 
 				deltaX=abs(x1-x0)/2
 				deltaY=abs(y1-y0)/2
@@ -166,36 +164,9 @@ class cropClass(eUcatalog.moverCat,helper):
 				print file_names
 				#AnimateGif=AnimationDir+"/animate-%02u.gif" % moverID
 				AnimateGif=AnimationDir+"/animate-%s.gif" % moverID
-				crp=eUcropper.cropperClass()
-				crp.writeGif(AnimateGif, imgs, duration=0.4)
+				eUcropper.writeGif(AnimateGif, imgs, duration=0.4)
 
 				
-	def frame_animation(self):
-   	    ImagesDir=self.ImagesDir
-	    res=commands.getoutput("rm "+ImagesDir+"/frameanima*" )
-	    for id in range(0,3):
-	        AnimationGif=ImagesDir+"/frameanimation-%02u.gif" % (int(id))
-		AnimationFrame=self.fits[int(id)]
-		iraf.export.images=AnimationFrame
-		iraf.export.format="gif"
-		iraf.export.binfiles=AnimationGif
-		iraf.export.outbands="zscale(i1)"
-		iraf.export(_save=0,mode='h')	
-	        img=Image.open(AnimationGif)
-     	    	maxAnimationSize=float(cfg["max_animation_size"])
-	    	if self.frameWidth>maxAnimationSize: 
-			factor=(maxAnimationSize/self.frameWidth)
-	    	if self.frameHeight>maxAnimationSize:
-			factor=(maxAnimationSize/self.frameHeight)
-	    	img1=img.resize((int(self.frameWidth*factor),int(self.frameHeight*factor)),Image.ANTIALIAS)
-	    	#img1.show()
-	    	img1.save(AnimationGif)
-
-	    file_names = sorted((fn for fn in os.listdir(ImagesDir) if fn.startswith('frameanimation-')))
-	    imgs = [Image.open(ImagesDir+"/"+fn) for fn in file_names]
-	    print file_names
-	    AnimateGif=ImagesDir+"/frameanimate.gif"
-	    writeGif(AnimateGif, imgs, duration=1)
 
 
 
@@ -251,7 +222,8 @@ class cropClass(eUcatalog.moverCat,helper):
 			        xytext=(+18, +18), textcoords='offset points', fontsize=10, \
 			        arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=.2"))
 
-			pyplot.savefig(CorrelationDir+"/correlation"+str(moverID)+".png")					
+			pyplot.savefig(CorrelationDir+"/correlation"+str(moverID)+".png")	
+			pyplot.close()				
 
    			
 
@@ -259,25 +231,19 @@ class cropClass(eUcatalog.moverCat,helper):
 		CroppiesDir=self.CroppiesDir
 		if not os.path.exists(CroppiesDir):
 		    os.makedirs(CroppiesDir)
-		res=commands.getoutput("rm "+CroppiesDir+"/cropp*" )
 		tam=0
 		movers=self.data
 		moversIDs=set(movers['ID'])
 		print moversIDs
 		for moverID in moversIDs:
-			res=commands.getoutput("rm croppy"+str(moverID)+"*.fits" )
 			print "Croping mover ID:",moverID
 			moverFlt=(movers['ID']==moverID)
 			mover=movers[moverFlt]
 			tam=int(float(mover['A_WORLD'].max()*3600*4))
-			if len(set(mover['frame']))!=3:
-					print "CROPPIES: not 3 frames",set(mover['frame'])
-					res=commands.getoutput("convert "+self.ImagesDir+"/nodata.png "+CroppiesDir+"/croppies"+str(moverID)+".gif")
-					continue
+			framelist=[]
 			for id in mover['frame']:
 
 				print "Processing frame:",id
-				#SrcFrame=frame+"-%02u.fit" % int(id)
 				SrcFrame=self.solvefits[int(id)-1]
 				moverFlt=(mover['frame']==id)
 				mov=mover[moverFlt]
@@ -289,37 +255,22 @@ class cropClass(eUcatalog.moverCat,helper):
 
 				for idd in mover['frame']:
 					print "Processing subframe:",moverID,"-",id,"-",idd
-					#DstFrame=frame+"-%02u.fit" % int(idd)
+
 					DstFrame=self.solvefits[int(idd)-1]
 					print "Dest Frame:",DstFrame
 					(x1,y1)=map(lambda x:int(x),(self.wcs2pix(DstFrame,(ra_org,dec_org))))	
 					print x1,y1
 					CropFrame=CroppiesDir+"/croppy%s-%02u-%02u.png" % (moverID,int(id),int(idd))
-					if os.path.isfile(CropFrame):
-						os.remove(CropFrame)
-					self.cropper(DstFrame,x1-tam,y1-tam,x1+tam,y1+tam,CropFrame)
+					res=commands.getoutput("cp "+configpath+"/nodata.png "+CropFrame)
+					if not self.cropper(DstFrame,x1-tam,y1-tam,x1+tam,y1+tam,CropFrame,negative=True):
+						res=commands.getoutput("cp "+configpath+"/nodata.png "+CropFrame)
+						continue
+					if id==idd:
+						framelist.append(CropFrame)
 
-			res=commands.getoutput("rm "+CroppiesDir+"/croppies"+str(moverID)+".png" )
-			if len(set(mover['frame']))==3:	
-			  try:
-				iraf.files(FitsDir+"/croppy"+str(moverID)+"-*-*.fit",Stdout=FitsDir+"/croppies"+str(moverID)+".lis") 
-				iraf.export.images="@"+FitsDir+"/croppies"+str(moverID)+".lis"
-				iraf.export.format="gif"
-				iraf.export.binfiles=CroppiesDir+"/croppies"+str(moverID)+".gif"
-				iraf.export.outbands="band(  \
-						zscale(i1)//128//zscale(i2)//128//zscale(i3),	\
-						128, \
-						zscale(i4)//128//zscale(i5)//128//zscale(i6),	\
-						128, \
-						zscale(i7)//128//zscale(i8)//128//zscale(i9)	\
-						)"
-				iraf.export()
-			  except:
-				print "CROPPIES: Fail"
-				res=commands.getoutput("convert "+self.ImagesDir+"/nodata.png "+CroppiesDir+"/croppies"+str(moverID)+".gif")
-			else:
-				print "CROPPIES: No 3 frames"
-				res=commands.getoutput("convert "+self.ImagesDir+"/nodata.png "+CroppiesDir+"/croppies"+str(moverID)+".gif")
+			outname=self.ImagesDir+"/image"+str(moverID)+".png"
+			self.compose_image(framelist,outname)
+
 			
 	def images(self):
 		ImagesDir=self.ImagesDir
@@ -385,14 +336,15 @@ class cropClass(eUcatalog.moverCat,helper):
 				if os.path.isfile(DstFrame):
 					os.remove(DstFrame)
 
-				self.cropper(SrcFrame,x-tam,y-tam,x+tam,y+tam,DstFrame)
+				if not self.cropper(SrcFrame,x-tam,y-tam,x+tam,y+tam,DstFrame):
+					continue
+
 				framelist.append(DstFrame)
 				xx=tam
 				yy=tam
-
 				linewidth=int(tam/50)
 				linewidth=1
-				im = Image.open(DstGif).convert('RGB')
+				im = Image.open(DstFrame).convert('RGB')
 				draw = ImageDraw.Draw(im)
 				#draw.line(((xx-5,yy),(xx+5,yy)),width=1,fill='#ff0000')
 				draw.line(((x_sat-tam/10,y_sat),(x_sat+tam/10,y_sat)),width=linewidth/2,fill='#0000ff')
@@ -402,45 +354,28 @@ class cropClass(eUcatalog.moverCat,helper):
 				#draw.line(((xx-10,yy),(xx+10,yy)),width=linewidth/1,fill='#ff0000')
 				#draw.ellipse(((xx-tam/5,yy-tam/5),(xx+tam/5,yy+tam/5)),outline='#ff0000')
 				del draw 
-				im.save(DstGif)
+				im.save(DstFrame)
 
-			print FitsDir+"/image"+str(moverID)+"-*.fit"
-			print FitsDir+"/image"+str(moverID)+".lis"
-			f=open(FitsDir+"/image"+str(moverID)+".lis",'w')
-			for fr in framelist:
-				f.write(fr)
-				f.write('\n')
-			f.close()								
-			#iraf.files(FitsDir+"/image"+str(moverID)+"-*.fit",Stdout=FitsDir+"/image"+str(moverID)+".lis") 
+			#outname=ImagesDir+"/image"+str(moverID)+".png"
+			#self.compose_image(framelist,outname)
 
-	   		#iraf.imcombine.combine="average"
-			#iraf.imcombine.reject="sigclip"
-	   		iraf.imcombine.combine="median"
-			iraf.imcombine.reject="minmax"
-			iraf.imcombine.nlow="0"
-			iraf.imcombine.nhigh=str(Ndetections-1)
-			iraf.imcombine.lsigma="1.01"
-			iraf.imcombine.hsigma="1.01"
-			iraf.imcombine.scale="none"
-			iraf.imcombine.expname="EXPTIME"
-			iraf.imcombine.offset="none"
-			iraf.imcombine.weight="none"
-			iraf.imcombine.zero="none"
-			print "kk"
-			iraf.imcombine("@"+FitsDir+"/image"+str(moverID)+".lis",output=FitsDir+"/image"+str(moverID)+".fit",_save=0,mode='h')
-			print "kk"
-			if not os.path.exists(ImagesDir):
-			    os.makedirs(ImagesDir)
-			res=commands.getoutput("rm "+ImagesDir+"/image"+str(moverID)+".gif" )
-			
-			iraf.export.images=FitsDir+"/image"+str(moverID)+".fit"
-			#iraf.export.images="@image"+str(moverID)+".lis"
-			iraf.export.format="gif"
-			iraf.export.binfiles=ImagesDir+"/image"+str(moverID)+".gif"
-			#iraf.export.outbands="zscalem(i1,i1>=0 &&i1<=255)"
-			iraf.export.outbands="zscale(i1)"
-			#iraf.export.outbands="cmap(i1,i2,i3)"
-			iraf.export(_save=0,mode='h')
+
+	def compose_image(self,framelist,outname):
+		imlist={}
+		cmd="("
+		for i,fr in enumerate(framelist):
+			imlist['i'+str(i)]=Image.open(fr)
+			if i==0:
+				cmd=cmd+"float(i"+str(i)+")"
+			else:			
+				cmd=cmd+"+float(i"+str(i)+")"
+		cmd=cmd+")/"+str(len(framelist))
+		print cmd
+		print imlist
+
+		out = ImageMath.eval(cmd, imlist).convert('P')
+		out.save(outname,"PNG")
+
 
 	def html(self):
 
@@ -467,7 +402,6 @@ class cropClass(eUcatalog.moverCat,helper):
 		return Str+"]"
 
 	def html_table(self):
-		FitsDir=self.FitsDir.replace(self.htmldir,'.')
 		ImagesDir=self.ImagesDir.replace(self.htmldir,'.')
 		AnimationDir=self.AnimationDir.replace(self.htmldir,'.')
 		CroppiesDir=self.CroppiesDir.replace(self.htmldir,'.')
@@ -533,7 +467,7 @@ class cropClass(eUcatalog.moverCat,helper):
 				moverFlt=(mover['frame']==id)
 				mov=mover[moverFlt]
 				f.write("<td>\n")
-				f.write('\n<a href=../images/png/'+self.pngs[int(id)-1]+'><img src=\"'+ImagesDir+'/image%s-%02u.gif' % (moverID,int(id)) +'\"  /></a>\n')
+				f.write('\n<a href=../images/png/'+self.pngs[int(id)-1]+'><img src=\"'+ImagesDir+'/image%s-%02u.png' % (moverID,int(id)) +'\"  /></a>\n')
 				f.write("</td>\n")
 
 			if len(mover['frame'])==2 and mover['frame'][-1]==2:
@@ -543,10 +477,21 @@ class cropClass(eUcatalog.moverCat,helper):
 
 
 			f.write("<td>\n")
-			f.write('\n<img src=\"'+ImagesDir+'/image'+str(moverID)+'.gif"   />\n')
+			f.write('\n<img src=\"'+ImagesDir+'/image'+str(moverID)+'.png"   />\n')
 			f.write("</td>\n")
 			f.write("<td>\n")
-			f.write('\n<img src=\"'+CroppiesDir+'/croppies'+str(moverID)+'.gif"   />\n')
+			#croppies imagen table
+			f.write("<table class='cropiesimage'>")
+			for row in range(3):
+				f.write("<tr>")
+				for col in range(3):
+					f.write("<td>")
+					CropFrame=CroppiesDir+"/croppy%s-%02u-%02u.png" % (moverID,int(row)+1,int(col)+1)
+					f.write('\n<img src=\"'+CropFrame+'"   />\n')
+					f.write("</td>")
+				f.write("</tr>")
+			f.write("</table>")
+			#f.write('\n<img src=\"'+CroppiesDir+'/croppies'+str(moverID)+'.gif"   />\n')
 			f.write("</td>\n")
 			f.write("</tr>\n")
 

@@ -69,7 +69,7 @@ class fitMaths():
 		return new
 
 	def save(self,f):
-		self.hdulist.writeto(f) 
+		self.hdulist.writeto(f,clobber=True) 
 
 if __name__ == '__main__':
     '''
