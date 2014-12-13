@@ -13,7 +13,7 @@
 #Nacho Mas Junio 2013
 #Status: work
 import pyfits
-from pylab import *
+
 import commands,os, sys,glob
 from eUconfig import *
 cfg=dict(config.items("SOLVERASTROMETRY"))

@@ -17,7 +17,6 @@
 #Status: work for La Sagra file
 
 import pyfits
-from pylab import *
 import commands,os, sys
 import shutil
 import re

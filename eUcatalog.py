@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: iso-8859-15 -*-
 import pyfits
-from pylab import *
 import commands,os, sys
 import shutil
 import csv

@@ -15,8 +15,6 @@
 #Nacho Mas Junio 2013
 #Status: work. Further housekeeping needed
 
-import matplotlib
-matplotlib.use('Cairo')
 from  matplotlib import pyplot
 
 import pyfits

@@ -20,17 +20,17 @@
 #Status: work for La Sagra file
 
 import pyfits
-from pylab import *
-
 import shutil
 import re
 import numpy as np
 import eUcatalog
-import math
 import csv
 import commands
 
 from eUconfig import *
+
+pi=np.pi
+
 cfg=dict(config.items("FCANDIDATES"))
 debug=cfg["debug"]
 bolaRectal=float(cfg["bolarectal"])
@@ -292,7 +292,7 @@ class candidates(helper):
 
 		pa_theta_sur_c="addcol PA0_THETA_SUR ((PA0_THETA>=0)?(180-PA0_THETA):(-PA0_THETA))"
 		similar_thetas_cmd="select \"(abs(THETA_J2000_1-PA0_THETA)<"+str(RMSangleDiff)+"||abs(THETA_SUR_1-PA0_THETA_SUR)<"+str(RMSangleDiff)+")\""
-		MAX_SEP_0=math.tan(bolaRectal*pi/180)
+		MAX_SEP_0=np.tan(bolaRectal*pi/180)
 		MAX_SEP="addcol MAX_SEP (Separation*"+str(MAX_SEP_0)+")"
 		mocfile="moc_"+re.escape(self.fits[2])
 		out_frame_c="addcol C_OUT_FLAG (inMoc(\""+mocfile+"\",ALPHA_J2000_C,DELTA_J2000_C))"
@@ -386,7 +386,7 @@ class candidates(helper):
 
 		pa_theta_sur_c="addcol PA0_THETA_SUR ((PA0_THETA>=0)?(180-PA0_THETA):(-PA0_THETA))"
 		similar_thetas_cmd="select \"(abs(THETA_J2000_2-PA0_THETA)<"+str(RMSangleDiff)+"||abs(THETA_SUR_2-PA0_THETA_SUR)<"+str(RMSangleDiff)+")\""
-		MAX_SEP_0=math.tan(bolaRectal*pi/180)
+		MAX_SEP_0=np.tan(bolaRectal*pi/180)
 		MAX_SEP="addcol MAX_SEP (Separation*"+str(MAX_SEP_0)+")"
 		stiltsStr="stilts tpipe in=rectal2_3.cat \
 		  cmd=\'"+delta_c+ "\' \

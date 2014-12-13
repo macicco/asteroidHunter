@@ -17,7 +17,7 @@
 #Nacho Mas Junio 2013
 #Status: work
 import pyfits
-from pylab import *
+import math
 import commands,os, sys
 import os.path
 from eUconfig import *
@@ -94,7 +94,7 @@ class ScampSolver(helper):
 			zeropoint=float(header['PHOT_C'])
 			print flxscale,zeropoint
 			if flxscale!=0:
-				dmagzero=-2.5*log10(self.exposure*flxscale)-zeropoint+magzerop
+				dmagzero=-2.5*math.log10(self.exposure*flxscale)-zeropoint+magzerop
 			else:
 				dmagzero=0
 			

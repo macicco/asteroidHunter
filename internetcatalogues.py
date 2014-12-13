@@ -2,7 +2,7 @@
 #-*- coding: iso-8859-15 -*-
 #NACHO MAS
 import ephem,urllib
-from pylab import *
+
 
 def group(lst, n):
   for i in range(0, len(lst), n):

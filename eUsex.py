@@ -17,7 +17,6 @@
 
 import pyfits
 import math
-from pylab import *
 import commands,os, sys
 
 from eUconfig import *

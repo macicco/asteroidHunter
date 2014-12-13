@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: iso-8859-15 -*-
 import pyfits
-from pylab import *
 import commands,os, sys
 import shutil
 import csv
@@ -9,16 +8,18 @@ import re
 import numpy as np
 import eUcatalog
 
+
 from eUconfig import *
 cfg=dict(config.items("FMOVERS"))
 debug=cfg["debug"]
 
+pi=np.pi
 
 def Haversine((ra1,dec1),(ra2,dec2)):
 	dra = ra2 - ra1
 	ddec = dec2 - dec1
-	a = sin(ddec/2)*sin(ddec/2) + cos(dec1) * cos(dec2) * sin(dra/2) * sin(dra/2)
-	c = 2 * arcsin(min(1,sqrt(a)))
+	a = np.sin(ddec/2)*np.sin(ddec/2) + np.cos(dec1) * np.cos(dec2) * np.sin(dra/2) * np.sin(dra/2)
+	c = 2 * np.arcsin(min(1,np.sqrt(a)))
 	return c
 
 class checkMovers(eUcatalog.moverCat,helper):
@@ -120,7 +121,7 @@ class checkMovers(eUcatalog.moverCat,helper):
 		meanSpeed=np.mean(SPEEDs)
 		stdSpeed=np.std(SPEEDs)
 	        f=lambda x:w[0]*x+w[1]
-		cosfactor=cos(DECs[1]*np.pi/180)
+		cosfactor=np.cos(DECs[1]*np.pi/180)
 		if (cosfactor==0):
 			cosfactor=0.00001
 		PA=np.arctan(w[0]/cosfactor)*180/np.pi

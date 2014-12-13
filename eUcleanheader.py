@@ -12,7 +12,6 @@
 #Status: work
 
 import pyfits
-from pylab import *
 import commands,os, sys
 from eUconfig import *
 
