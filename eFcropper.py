@@ -239,6 +239,11 @@ class cropClass(eUcatalog.moverCat,helper):
 			mover=movers[moverFlt]
 			tam=int(float(mover['A_WORLD'].max()*3600*4))
 			framelist=[]
+			for k in range(3):
+				for kk in range(3):
+					dummy=CroppiesDir+"/croppy%s-%02u-%02u.png" % (moverID,k+1,kk+1)
+					res=commands.getoutput("cp "+configpath+"/nodata.png "+dummy)
+
 			for id in mover['frame']:
 
 				print "Processing frame:",id
@@ -261,7 +266,6 @@ class cropClass(eUcatalog.moverCat,helper):
 					CropFrame=CroppiesDir+"/croppy%s-%02u-%02u.png" % (moverID,int(id),int(idd))
 					res=commands.getoutput("cp "+configpath+"/nodata.png "+CropFrame)
 					if not self.cropper(DstFrame,x1-tam,y1-tam,x1+tam,y1+tam,CropFrame,negative=True):
-						res=commands.getoutput("cp "+configpath+"/nodata.png "+CropFrame)
 						continue
 					if id==idd:
 						framelist.append(CropFrame)
