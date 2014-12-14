@@ -62,7 +62,7 @@ class sextractor(helper):
 
 	        print self.exposure
 		ZP=ZP+2.5*math.log10(self.exposure)
-		print "SETTING ZP",2.5*math.log10(self.exposure)
+		print "SETTING ZP",ZP,2.5*math.log10(self.exposure)
 		print "SETTING MJDATE OBS DATE:",arg,date
 
         	hdulist.close()

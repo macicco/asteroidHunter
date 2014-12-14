@@ -42,6 +42,7 @@ class ScampSolver(helper):
 		print ""	
         	print "FILE:",arg
 		ZP=DEFAULT_ZP+2.5*math.log10(self.exposure)
+		print "DEFAULT ZP:",DEFAULT_ZP, "ZERO POINT:",ZP
 		sexStr="sex "+self.fits[i]+" -c "+cfg["sexcfg"]+" -CATALOG_NAME "+arg + \
 		" -FILTER Y -FILTER_NAME "+cfg["sexfilter"] +" -PARAMETERS_NAME "+cfg["sexparam"] + " -MAG_ZEROPOINT "+str(ZP)
 		print "EXECUTING:",sexStr
@@ -60,7 +61,8 @@ class ScampSolver(helper):
 	  print cmd
 	  res=commands.getoutput(cmd)
 	  print res
-	  if res.find("Not enough matched detections in instrument A1" )!=-1 or res.find("Significant inaccuracy likely to occur in projection")!=-1 \
+	  if res.find("Not enough matched detections in instrument A1" )!=-1 \
+		or res.find("Significant inaccuracy likely to occur in projection")!=-1 \
 		or res.find("*Error*: No source found in reference catalog(s)")!=-1 :
 		print "SCAMP FAIL!!!!!"
 		return False
@@ -103,7 +105,9 @@ class ScampSolver(helper):
 				dmagzero=0
 				return False
 
-			ZP=magzerop+dmagzero
+			#TO be check
+			#ZP=magzerop+dmagzero
+			ZP=zeropoint+dmagzero
 			header['DMAGZERO']=(dmagzero,"ZERO POINT FINE TUNE")
 			header['ZMAG']=(ZP,"ZERO POINT")
 			header['RADECSYS']=('FK5',"")

@@ -8,6 +8,7 @@ import commands,os, sys,glob
 from PIL import Image,ImageDraw,ImageFont
 import f2n
 import copy
+import numpy as np
 
 
 class cropperClass:
@@ -34,6 +35,10 @@ class cropperClass:
 
 
 	def cropXY(self,x0,x1,y0,y1,fichero,negative=True):
+		w,h = x1-x0,y1-y0
+		data = np.zeros( (w,h), dtype=np.uint8)
+		img = Image.fromarray(data)
+		img.save('my.png')
 	   try:
 		print "Generating crop from:",self.fitsToCrop, "x,y coords:",x0,x1,y0,y1
 		myimage = copy.deepcopy(self.fitsToCrop)

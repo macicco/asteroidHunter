@@ -8,12 +8,6 @@
 #Nacho Mas Oct 2013
 #Status:
 
-##HACK to avoid pyraf tkagg backend
-##to be load. Cairo backend allow
-##run without Xserver
-import matplotlib
-matplotlib.use('Cairo')
-from  matplotlib import pyplot
 
 import shutil,os
 from daemon import runner
