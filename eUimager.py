@@ -242,7 +242,10 @@ class imagerClass(helper):
 
 		for i,sat_cat in enumerate(self.sat_filtered):
 			cat=eUcatalog.Cat()
-		 	cat.loadFIT(sat_cat)
+			try:
+			 	cat.loadFIT(sat_cat)
+			except:
+				continue
 			im_mask = Image.new("RGBA", (self.frameWidths[i]/rebin, self.frameHeights[i]/rebin))
 			draw_mask = ImageDraw.Draw(im_mask)
 			#im = Image.open(self.png_dest[i])

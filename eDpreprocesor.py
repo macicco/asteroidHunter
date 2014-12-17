@@ -17,6 +17,7 @@ import eUsolverAstrometry
 import eUsolverScamp
 import eUhelper
 import eUimager
+import eSupernovaHunter
 
 import eUsolverScamp
 
@@ -83,6 +84,8 @@ class preprocesorDaemonClass(eUdaemon.FileChecker):
 		imager.fitsPNGs()
 		imager.writeRegistra()
 		imager.paintNGCs()
+		sn=eSupernovaHunter.SN_Hunter(fits)
+		sn.do()
 
 		#copy solvefits to all queues
 		for k,queue in enumerate(self.cfg["dir_outbox"].split(',')):

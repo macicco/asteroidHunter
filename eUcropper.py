@@ -9,6 +9,8 @@ from PIL import Image,ImageDraw,ImageFont
 import f2n
 import copy
 import numpy as np
+import wcsutil
+import pyfits
 
 
 class cropperClass:
@@ -22,52 +24,69 @@ class cropperClass:
 		self.fitsToCrop = f2n.fromfits(fits)
 
 
-	def cropRADEC(self,ra,dec,deltaRA,deltaDEC,fichero):
-		print "Generating crop from:",fits, "RA,DEC,deltas coords:",ra,dec,deltaRA,deltaDEC
-		coords0=(self.wcs2pix(self.wcsFits,RA-deltaRA,DEC-deltaDEC))
-		coords1=(self.wcs2pix(self.wcsFits,RA+deltaRA,DEC+deltaDEC))
-		if coords0==(0,0) and coords1==(0,0):
-			print "RA/DEC to x,y FAIL ",fichero," not create"
-			return False
-		(x0,y0)=map(lambda x:int(x),coords0)
-		(x1,y1)=map(lambda x:int(x),coords0)
-		return self.cropXY(self,x0,x1,y0,y1,fichero)
+	def cropRADEC(self,ra,dec,deltaRA,deltaDEC,fichero,negative=True):
+		print "Generating crop from:",self.wcsFits, "RA,DEC,deltas coords:",ra,dec,deltaRA,deltaDEC
+		wcs = wcsutil.WCS(pyfits.open(self.wcsFits)[0].header)
+		ramin=ra-deltaRA
+		ramax=ra+deltaRA
+		decmin=dec-deltaDEC
+		decmax=dec+deltaDEC
+		print ramin,ramax
+		print decmin,decmax
+		(x0,y0) = wcs.sky2image(ramax,decmin)
+		(x1,y1) = wcs.sky2image(ramin,decmax)
+		print (x0,y0)
+		print (x1,y1)
+		return self.cropXY(x0,x1,y0,y1,fichero,negative)
 
 
 	def cropXY(self,x0,x1,y0,y1,fichero,negative=True):
 		#Always return a image padded with black if outside limits
 		#Check limits
 		print "Generating crop from:",self.fitsToCrop, "x,y coords:",x0,x1,y0,y1
+		x0,x1,y0,y1=map(lambda x:int(x),(x0,x1,y0,y1))
 		xx0,xx1,yy0,yy1=x0,x1,y0,y1
 		overflow=False
 		x0offset=0
-		x1offset=x1-x0
+		x1offset=int(x1-x0)
 		y0offset=0
-		y1offset=y1-y0
+		y1offset=int(y1-y0)
 		if x0<0:
+			if x1<0:
+				return False
 			xx0=0
 			overflow=True
-			x0offset=-x0
+			x0offset=int(-x0)
 
 		if x1>self.fitsToCrop.origwidth:
+			if x0>self.fitsToCrop.origwidth:
+				return False			
 			xx1=self.fitsToCrop.origwidth
 			overflow=True
-			x1offset=xx1-xx0
+			x1offset=int(xx1-xx0)
 
 		if y0<0:
+			if y1<0:
+				return False
 			yy0=0
 			overflow=True
-			y1offset=yy1-yy0
+			y1offset=int(yy1-yy0)
 
 
 		if y1>self.fitsToCrop.origheight:
+			if y0>self.fitsToCrop.origheight:
+				return False
 			yy1=self.fitsToCrop.origheight
 			overflow=True
-			y0offset=y1-yy1
+			y0offset=int(y1-yy1)
 
 
+		if abs(xx0-xx1)<=5 or abs(yy0-yy1)<=5:
+			print "Not enough size. "
+			return False
 
 		myimage = copy.deepcopy(self.fitsToCrop)
+		print (xx0,xx1,yy0,yy1)
 		myimage.crop(xx0,xx1,yy0,yy1)
 		myimage.setzscale(z1="auto",z2="flat",samplesizelimit=10000,nsig=3)
 		#myimage.setzscale(z1="auto",z2="auto",samplesizelimit=10000,nsig=3)
@@ -81,20 +100,21 @@ class cropperClass:
 
 
 		if not overflow:
+		#if True:	
 			myimage.tonet(fichero)
 		else:
 			print "f2n overflow, Padding in black"
 			box=(x0offset,y0offset,x1offset,y1offset)
 			print "BOX",box
-			w,h = x1-x0,y1-y0
+			w,h = int(x1-x0),int(y1-y0)
 			print "W/H",w,h
 			data = np.empty( (w,h), dtype=np.uint8)
 			data.fill(25)
 			img = Image.fromarray(data)
-			print "SIZE:",img.size
 			im  = myimage.pilimage		
+			print "SIZE:",img.size,im.size
 			img.paste(im, box)
-			img.save(fichero)
+			img.save(fichero,"PNG")
 
 	  	return True	
 
