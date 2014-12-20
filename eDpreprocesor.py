@@ -84,6 +84,8 @@ class preprocesorDaemonClass(eUdaemon.FileChecker):
 		imager.fitsPNGs()
 		imager.writeRegistra()
 		imager.paintNGCs()
+
+		#tries supernova funtionality while doing is own daemon
 		sn=eSupernovaHunter.SN_Hunter(fits)
 		sn.do()
 

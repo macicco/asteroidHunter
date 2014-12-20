@@ -74,9 +74,11 @@ class DSS():
 				pass
 
 	def pngGet(self,ra,dec,size,name=""):
+	  try:
 		if name=="":
 			name=str(ra)+"_"+str(dec)+"_x"+str(size)
 		url=self.ESOgetURL(ra,dec,size)
+		print url
 		urllib.urlretrieve(url,name+'.fit')
 		myimage= f2n.fromfits(name+'.fit')
 		#myimage.setzscale("auto")
@@ -85,6 +87,8 @@ class DSS():
 		myimage.makepilimage("lin", negative = False)
 		# We can choose to make a negative image.
 		myimage.tonet(name+".png")
+	  except:
+		print "FAIL to get DSS image"
 
 	def pngSesame(self,obj):
 		ra,dec=self.cds_sesame(obj)		
