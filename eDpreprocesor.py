@@ -86,7 +86,7 @@ class preprocesorDaemonClass(eUdaemon.FileChecker):
 		imager.paintNGCs()
 
 		#tries supernova funtionality while doing is own daemon
-		sn=eSupernovaHunter.SN_Hunter(fits)
+		sn=eSupernovaHunter.SN_Hunter([fits[0]])
 		sn.do()
 
 		#copy solvefits to all queues

@@ -81,7 +81,7 @@ class cropperClass:
 			y0offset=int(y1-yy1)
 
 
-		if abs(xx0-xx1)<=5 or abs(yy0-yy1)<=5:
+		if abs(xx0-xx1)<=10 or abs(yy0-yy1)<=10:
 			print "Not enough size. "
 			return False
 

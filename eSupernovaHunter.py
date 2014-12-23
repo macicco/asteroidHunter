@@ -24,14 +24,9 @@ class SN_Hunter(eUcropper.cropperClass,helper):
 	   for i,fits in enumerate(self.solvefits):	
 		ra  = self.centers[i][0]
 		dec = self.centers[i][1]
-
-		path=cfg['dir_image_base']+'/'+self.getToday()+'/'+cfg['galaxy_image']
-		if not os.path.exists( path):
-	    		os.makedirs(path)
-
 		self.cropGalaxies(fits,ra,dec)
 
-        def getGalaxies(self,fits,ra,dec):
+        def getGalaxies(self,ra,dec):
            	#url="http://localhost:9000/hyperleda"
 		url=cfg['galaxy_server']
 		d = {}
@@ -49,70 +44,118 @@ class SN_Hunter(eUcropper.cropperClass,helper):
 	def cropGalaxies(self,fits,ra,dec):
 		self.loadImageFromFits(fits)
 		self.loadWCSfromFits(fits)
-		for galaxy in self.getGalaxies(fits,ra,dec):
-			if len(galaxy['Names'])!=0:
-				name=galaxy['Names'].split(' ')[0]
-			else:
-				name='PGC'+galaxy['PGC']
+		for galaxy in self.getGalaxies(ra,dec):
+			name=galaxy['Names'].strip().split(' ')[0]
+			if len(name)==0:
+				name='PGC'+str(galaxy['PGC'])
+			name=name.replace('+','_')
+			name=name.replace('.','s')
+			name=name.replace('(','')
+			name=name.replace(')','')
 			ra=float(galaxy['RA'])
 			dec=float(galaxy['DEC'])
 			minsize=60.
 			r=max(float(galaxy['D'])/3600.,minsize/3600.)
 			print name,ra,dec,r
-
+			path=cfg['dir_image_base']+'/'+self.getToday()+'/'+cfg['galaxy_image']
+			#path='.'
+			if not os.path.exists( path):
+	    			os.makedirs(path)
 		        if eUfitCrop.fitCropy(fits, ra, dec, r, r, units='wcs', outfile=path+'/'+name+'.fit'):
-				self.cropRADEC(ra,dec,r,r,path+'/'+name+'.png',negative=False)
-				self.getDSS(ra,dec,2*r*60,path+'/'+name+'.dss')
-				self.sex(path+'/'+name+'.fit',name+'.cat')
-				self.sex(path+'/'+name+'.dss.fit',name+'.dss.cat')
+				if self.cropRADEC(ra,dec,r,r,path+'/'+name+'.png',negative=False):
+					self.getDSS(ra,dec,2*r*60,path+'/'+name+'.dss')
+					data=self.sex(path+'/'+name+'.fit',path+'/'+name+'.cat')
+					self.paint(path+'/'+name+'.png',data,symbol=1)
+					dataDSS=self.sex(path+'/'+name+'.dss.fit',path+'/'+name+'.dss.cat')
+					self.paint(path+'/'+name+'.dss.png',dataDSS,symbol=2)
+					candidate=False
+					news=self.match(path+'/'+name)
+					if len(news)>0:
+						print "SUPERNOVA CANDIDATE:"+name
+						self.paint(path+'/'+name+'.dss.png',news)
+						self.paint(path+'/'+name+'.png',news)
+						candidate=True
+					self.writeJson(name,candidate)
+				else:
+					print "Fail to get png croppy for:",name
+					continue
 			else:
+				print "Fail to get fit croppy for:",name
 				continue
 
 	def sex(self,fit,name):
 		sexStr="sex "+fit+" -c "+cfg["sexcfg"]+" -CATALOG_NAME "+name+" -FILTER Y -FILTER_NAME "+cfg["sexfilter"]+ \
-		" -CATALOG_TYPE FITS_1.0  " +" -PARAMETERS_NAME "+cfg["sexparam"]
+		 " -PARAMETERS_NAME "+cfg["sexparam"]+" -CHECKIMAGE_NAME "+fit+".apertures"
 		print "EXECUTING:",sexStr
 		res=commands.getoutput(sexStr)
 		print res
 		hdulist=pyfits.open(name)
-		return hdulist
+		data=hdulist[1].data
+		return data
+
+	def match(self,name):
+		#Search for a source in cat2 not in cat1
+		seeing=4
+		cat1=name+'.dss.cat'
+		cat2=name+'.cat'
+		stiltsStr="stilts tmatch2  fixcols=none in1="+cat1+ " in2="+cat2+" matcher=sky params="+str(seeing)+" \
+	       		values1=\"ALPHA_J2000 DELTA_J2000\" \
+       			values2=\"ALPHA_J2000 DELTA_J2000\" \
+		   	join=2not1  \
+			out="+name+".matched.cat  ofmt=fits-basic"
+		print stiltsStr
+		res=commands.getoutput(stiltsStr)
+		print res
+		hdulist=pyfits.open(name+".matched.cat")
+		data=hdulist[1].data
+		return data
 
 	def getDSS(self,ra,dec,r,name):
 		dss=eUdss.DSS()
 		dss.pngGet(ra,dec,r,name)
 
-	def writeJson(self):
-		#NOT FINISHED!!	
+	def paint(self,name,data,symbol=0):
+		im = Image.open(name).convert('RGB')
+		h,w=im.size
+		draw = ImageDraw.Draw(im)
+		for star in data:
+			x=int(star['X_IMAGE'])
+			y=h-int(star['Y_IMAGE'])
+			if symbol==0:
+				color='#ff0000'
+				coords0=((x-5,y-5),(x+5,y+5))
+				draw.rectangle(coords0,outline=color)
+			else :
+				if symbol==1:
+					color='#0000ff'
+				else:
+					color='#00ff00'
+				coords0=((x-5,y),(x+5,y))
+				coords1=((x,y-5),(x,y+5))
+				draw.line(coords0,width=1,fill=color)
+				draw.line(coords1,width=1,fill=color)
+
+
+		del draw 
+		im.save(name,"PNG")
+
+	def writeJson(self,galaxy_name,candidateFlag):
 		path=cfg['dir_image_base']+'/'+self.getToday()+'/'+cfg['galaxy_image']
 		filename=path+"/supernova.json"
-		movers=self.data
-		moversIDs=set(movers['ID'])
-		json_dict={'FRAME':self.frame,'SLOWMOVERS':[]}
-		json_dict_reduce={}
-	  	for moverID in moversIDs:
-			print "JSON mover ID:",moverID
-			moverFlt=(movers['ID']==moverID)
-			mover=movers[moverFlt]
-			m=mover[0]
-			if not math.isnan(round(m['DIS_MPC'],0)):
-				oc=round(m['DIS_MPC'],0)
-			else:
-				oc="-"
-			mpcobs=self.writeMPC('/dev/null',ID=moverID)
-			#r="%4.3e" % m['CORRELATION']
-			r="%4.3e" % m['RMS']
-			entry= {'ID':moverID,'MAG':round(m['MEAN_MAG'],1),'SPEED':round(m['MEANspeed'],1),'PA':round(m['PA'],1), \
-				'KNOW':bool(m['KNOW']),'OC':oc,'R':r,'MPCOBS':mpcobs}
-			entryReduce= {moverID:{'MAG':round(m['MEAN_MAG'],1),'SPD':round(m['MEANspeed'],1),'PA':round(m['PA'],1),'KNW':bool(m['KNOW']),'OC':oc,'R':r}}
-			#print moverID,entry
-			json_dict['SLOWMOVERS'].append(entry)
-			json_dict_reduce.update(entryReduce)
+		if not os.path.isfile(filename):
+			print "NO EXISTS:",filename
+		    	json_dict={}
+		else:
+		        fi=open(filename,"r")
+			obj=fi.read()
+			fi.close()
+			json_dict= simplejson.loads(obj)
+	
+		json_dict[galaxy_name]={'candidate':candidateFlag}
 		x = simplejson.dumps(json_dict)
 	        fi=open(filename,"w")
 		fi.write(x)
-		fi.close()	
-		print json_dict_reduce
-		return 	json_dict_reduce
+		fi.close()
 
 
 if __name__ == '__main__':
