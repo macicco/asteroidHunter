@@ -358,43 +358,17 @@ class helper:
 
 
 	def wcs2pix(self,fits,(ra,dec)):
-		# Load the FITS hdulist using pyfits
-		hdulist = pyfits.open(fits)
-
 		try:
-			# Parse the WCS keywords in the primary HDU
-			wcs = wcsutil.WCS(hdulist[0].header)
+			return wcs2pix(fits,(ra,dec))
 		except numpy.linalg.linalg.LinAlgError as err:
-		  if 'Singular matrix' in err.message:
-		    	# your error handling block
-			print "Singular matrix, not distorsion will be consider"
 			return self.KKwcs2pix(fits,(ra,dec),distort=False)
-		  else:
-		   	raise
-
-		# Convert the same coordinates back to pixel coordinates.
-		(x,y) = wcs.sky2image(ra,dec)
-		return (x,y)
 
 
 	def pix2wcs(self,fits,(x,y)):
-		# Load the FITS hdulist using pyfits
-		hdulist = pyfits.open(fits)
-
 		try:
-			# Parse the WCS keywords in the primary HDU
-			wcs = wcsutil.WCS(hdulist[0].header)
-		except numpy.linalg.linalg.LinAlgError as err:
-		  if 'Singular matrix' in err.message:
-		    	# your error handling block
-			print "Singular matrix, not distorsion will be consider"
+			return pix2wcs(fits,(x,y))
+		except:
 			return self.KKpix2wcs(fits,(x,y),distort=False)
-		  else:
-		   	raise
-
-		
-		(ra,dec) = wcs.image2sky(x,y)
-		return (ra,dec)
 
 
 	def KKwcs2pix(self,fits,(ra,dec),distort=True):
@@ -444,6 +418,51 @@ class helper:
 				return minRA,minDEC,maxRA,maxDEC	
 
 
+def getcenterRADEC(fit):	
+	hdulist = pyfits.open(fit)
+	hdulist.verify('silentfix')  
+	header = hdulist[0].header
+	Width=int(header['NAXIS1'])
+	Height=int(header['NAXIS2'])
+	hdulist.close()
+	(ra,dec)=pix2wcs(fit,(Width/2,Height/2))
+	return (ra,dec)
+
+def pix2wcs(fits,(x,y)):
+	# Load the FITS hdulist using pyfits
+	hdulist = pyfits.open(fits)
+	hdulist.verify('silentfix')  
+	try:
+		# Parse the WCS keywords in the primary HDU
+		wcs = wcsutil.WCS(hdulist[0].header)
+	except numpy.linalg.linalg.LinAlgError as err:
+	  if 'Singular matrix' in err.message:
+	    	# your error handling block
+		print "Singular matrix, not distorsion will be consider"
+		raise
+	  else:
+	   	raise
+		
+	(ra,dec) = wcs.image2sky(x,y)
+	return (ra,dec)
+
+def wcs2pix(fits,(ra,dec)):
+	# Load the FITS hdulist using pyfits
+	hdulist = pyfits.open(fits)
+	hdulist.verify('silentfix')  
+	try:
+		# Parse the WCS keywords in the primary HDU
+		wcs = wcsutil.WCS(hdulist[0].header)
+	except numpy.linalg.linalg.LinAlgError as err:
+	  if 'Singular matrix' in err.message:
+	    	# your error handling block
+		print "Singular matrix, not distorsion will be consider"
+		raise
+	  else:
+	   	raise
+
+	(x,y) = wcs.sky2image(ra,dec)
+	return (x,y)
 
 
 if __name__ == '__main__':

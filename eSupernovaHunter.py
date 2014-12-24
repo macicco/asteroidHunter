@@ -9,6 +9,7 @@ import eUdss
 import eUcropper
 import eUfitCrop
 
+
 from PIL import Image,ImageDraw,ImageFont
 import cPickle as pickle
 import numpy as np
@@ -18,13 +19,12 @@ from eUconfig import *
 
 cfg=dict(config.items("SUPERNOVA"))
 
-class SN_Hunter(eUcropper.cropperClass,helper):
+class SN_Hunter(eUcropper.cropperClass):
 
-        def do(self):
-	   for i,fits in enumerate(self.solvefits):	
-		ra  = self.centers[i][0]
-		dec = self.centers[i][1]
-		self.cropGalaxies(fits,ra,dec)
+        def do(self,fit):
+		(ra,dec)=getcenterRADEC(fit)
+		self.cropGalaxies(fit,ra,dec)
+
 
         def getGalaxies(self,ra,dec):
            	#url="http://localhost:9000/hyperleda"
@@ -57,7 +57,7 @@ class SN_Hunter(eUcropper.cropperClass,helper):
 			minsize=60.
 			r=max(float(galaxy['D'])/3600.,minsize/3600.)
 			print name,ra,dec,r
-			path=cfg['dir_image_base']+'/'+self.getToday()+'/'+cfg['galaxy_image']
+			path=cfg['dir_image_base']+'/'+TodayDir()+'/'+cfg['galaxy_image']
 			#path='.'
 			if not os.path.exists( path):
 	    			os.makedirs(path)
@@ -72,8 +72,14 @@ class SN_Hunter(eUcropper.cropperClass,helper):
 					news=self.match(path+'/'+name)
 					if len(news)>0:
 						print "SUPERNOVA CANDIDATE:"+name
-						self.paint(path+'/'+name+'.dss.png',news)
 						self.paint(path+'/'+name+'.png',news)
+						news_ = np.zeros((len(news),), dtype=[('X_IMAGE','>f4'),('Y_IMAGE','>f4')])
+						for n,star in enumerate(news):
+							ra_=star['ALPHA_J2000']
+							dec_=star['DELTA_J2000']
+							news_[n]=wcs2pix(path+'/'+name+'.dss.fit',(ra_,dec_))
+						print "NEWS_:",news_
+						self.paint(path+'/'+name+'.dss.png',news_,ytop=True)
 						candidate=True
 					self.writeJson(name,candidate)
 				else:
@@ -114,13 +120,17 @@ class SN_Hunter(eUcropper.cropperClass,helper):
 		dss=eUdss.DSS()
 		dss.pngGet(ra,dec,r,name)
 
-	def paint(self,name,data,symbol=0):
+	def paint(self,name,data,symbol=0,ytop=True):
 		im = Image.open(name).convert('RGB')
 		h,w=im.size
 		draw = ImageDraw.Draw(im)
 		for star in data:
 			x=int(star['X_IMAGE'])
-			y=h-int(star['Y_IMAGE'])
+			if ytop:
+				y=h-int(star['Y_IMAGE'])
+			else:
+				y=int(star['Y_IMAGE'])
+
 			if symbol==0:
 				color='#ff0000'
 				coords0=((x-5,y-5),(x+5,y+5))
@@ -140,7 +150,7 @@ class SN_Hunter(eUcropper.cropperClass,helper):
 		im.save(name,"PNG")
 
 	def writeJson(self,galaxy_name,candidateFlag):
-		path=cfg['dir_image_base']+'/'+self.getToday()+'/'+cfg['galaxy_image']
+		path=cfg['dir_image_base']+'/'+TodayDir()+'/'+cfg['galaxy_image']
 		filename=path+"/supernova.json"
 		if not os.path.isfile(filename):
 			print "NO EXISTS:",filename

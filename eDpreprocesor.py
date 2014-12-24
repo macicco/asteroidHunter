@@ -15,6 +15,7 @@ import eUcleanheader
 import eUcalibrate
 import eUsolverAstrometry
 import eUsolverScamp
+import eUswarp
 import eUhelper
 import eUimager
 import eSupernovaHunter
@@ -79,6 +80,11 @@ class preprocesorDaemonClass(eUdaemon.FileChecker):
 			print "FAIL TO SOLVE"
 			return fits_type+",FAIL TO SOLVE"
 
+		#SWARP
+		swarp=eUswarp.swarp(fits)
+	   	swarp.doOne2One()
+		singlefit=swarp.doTriplet()	   	
+
 		#make png images
 		imager=eUimager.imagerClass(fits)
 		imager.fitsPNGs()
@@ -86,8 +92,8 @@ class preprocesorDaemonClass(eUdaemon.FileChecker):
 		imager.paintNGCs()
 
 		#tries supernova funtionality while doing is own daemon
-		sn=eSupernovaHunter.SN_Hunter([fits[0]])
-		sn.do()
+		sn=eSupernovaHunter.SN_Hunter()
+		sn.do(singlefit)
 
 		#copy solvefits to all queues
 		for k,queue in enumerate(self.cfg["dir_outbox"].split(',')):

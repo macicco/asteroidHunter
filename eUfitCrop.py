@@ -81,7 +81,8 @@ def fitCropy(filename, xc, yc, xw=25, yw=25, units='pixels', outfile=None,
     head['NAXIS2']=int(ymax-ymin)
 
     if head.get('NAXIS1') == 0 or head.get('NAXIS2') == 0:
-            raise ValueError("Map has a 0 dimension: %i,%i." % (head.get('NAXIS1'),head.get('NAXIS2')))
+            print  ValueError("Map has a 0 dimension: %i,%i." % (head.get('NAXIS1'),head.get('NAXIS2')))
+	    return False	
 
     img = file[0].data[ymin:ymax,xmin:xmax]
     newfile = pyfits.PrimaryHDU(data=img,header=head)
