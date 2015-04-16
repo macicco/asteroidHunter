@@ -63,7 +63,8 @@ class SN_Hunter(eUcropper.cropperClass):
 	    			os.makedirs(path)
 		        if eUfitCrop.fitCropy(fits, ra, dec, r, r, units='wcs', outfile=path+'/'+name+'.fit'):
 				if self.cropRADEC(ra,dec,r,r,path+'/'+name+'.png',negative=False):
-					self.getDSS(ra,dec,2*r*60,path+'/'+name+'.dss')
+					if not self.getDSS(ra,dec,2*r*60,path+'/'+name+'.dss'):
+						continue
 					data=self.sex(path+'/'+name+'.fit',path+'/'+name+'.cat')
 					self.paint(path+'/'+name+'.png',data,symbol=1)
 					dataDSS=self.sex(path+'/'+name+'.dss.fit',path+'/'+name+'.dss.cat')
@@ -118,7 +119,7 @@ class SN_Hunter(eUcropper.cropperClass):
 
 	def getDSS(self,ra,dec,r,name):
 		dss=eUdss.DSS()
-		dss.pngGet(ra,dec,r,name)
+		return dss.pngGet(ra,dec,r,name)
 
 	def paint(self,name,data,symbol=0,ytop=True):
 		im = Image.open(name).convert('RGB')

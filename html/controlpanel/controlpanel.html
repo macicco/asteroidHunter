@@ -22,6 +22,9 @@
 <td class="menu"><a class='slowmoverscentu2' href='javascript:void(0)'>SlowCENTU2</a></td>
 <td class="menu"><a class='slowmoverscentu3' href='javascript:void(0)'>SlowCENTU3</a></td>
 </tr>
+<tr>
+<td class="menu"><a class='supernova' href='javascript:void(0)'>Supernova</a></td>
+</tr>
 </table>
 <table>
 <tr>
@@ -143,6 +146,10 @@ $('.slowmoverscentu2').click(function(){
 $('.slowmoverscentu3').click(function(){
 	date=$("#date").val()	
 	window.open("slowmovers.html?date="+date+"&telescope=CENTU3","_blank")
+});
+$('.supernova').click(function(){
+	date=$("#date").val()	
+	window.open("supernova.html?date="+date,"_blank")
 });
 var alarm_on=0;
 

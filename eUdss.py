@@ -87,8 +87,10 @@ class DSS():
 		myimage.makepilimage("lin", negative = False)
 		# We can choose to make a negative image.
 		myimage.tonet(name+".png")
+		return True
 	  except:
 		print "FAIL to get DSS image"
+		return False
 
 	def pngSesame(self,obj):
 		ra,dec=self.cds_sesame(obj)		

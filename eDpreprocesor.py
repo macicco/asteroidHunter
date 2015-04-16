@@ -12,6 +12,7 @@ import shutil
 from daemon import runner
 import eUdaemon
 import eUcleanheader
+
 import eUcalibrate
 import eUsolverAstrometry
 import eUsolverScamp
@@ -53,6 +54,7 @@ class preprocesorDaemonClass(eUdaemon.FileChecker):
 		for i,f in enumerate(files):
 			shutil.copy(dir+"/"+f,dir_tmp+"/"+f)
 
+
 		fits=map(lambda x:dir_tmp+"/"+x,files)
 		h=eUhelper.helper(fits)
 		dir_order=h.telescopesN[0]
@@ -82,7 +84,7 @@ class preprocesorDaemonClass(eUdaemon.FileChecker):
 
 		#SWARP
 		swarp=eUswarp.swarp(fits)
-	   	swarp.doOne2One()
+	   	#swarp.doOne2One()
 		singlefit=swarp.doTriplet()	   	
 
 		#make png images

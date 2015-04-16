@@ -17,7 +17,7 @@ import fitsMaths
 import commands,os, sys
 
 from eUconfig import *
-
+import eUdenoiser
 
 class calibrator:
 	def do(self,fits,telescopeN=-1,calibrate=True,invert=True):
@@ -49,6 +49,7 @@ class calibrator:
 			flated=dark_sustracted.flat(flat_file)
 			flated.save(f)
 
+
 		####INVERT THE FRAME TO FOLLOW LA SAGRA STANDARD
 		if invert:
 	 	   for i,f in enumerate(fits):
@@ -56,6 +57,11 @@ class calibrator:
 			light.hdulist[0].data=light.hdulist[0].data[::-1,:]
 			light.save(f)
 
+		sigma=float(cfg['denoise_sigma'])
+		if sigma !=0:
+	 	   for i,f in enumerate(fits):
+			print "Wavelet denoiser. SIGMA:",sigma
+			eUdenoiser.denoise(f,f,sigma)
 
 if __name__ == '__main__':
 	fitsFiles=sys.argv[1:]
